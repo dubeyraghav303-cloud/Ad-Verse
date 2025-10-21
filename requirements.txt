@@ -1,0 +1,10 @@
+streamlit
+# For AI Models
+torch
+transformers
+diffusers
+accelerate
+# For TTS
+TTS
+# For Video Editing
+moviepy
