@@ -5,7 +5,7 @@ import re
 
 # --- 1. Load the Model (This runs only ONCE when the app starts) ---
 print("[Agent 1] Initializing... This may take a moment.")
-model_id = "Qwen/Qwen2-7B-Instruct"
+model_id = "Qwen/Qwen2-1.5B-Instruct"
 
 # Setup device
 device = "cuda" if torch.cuda.is_available() else "cpu"
