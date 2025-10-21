@@ -1,3 +1,4 @@
+# Add these lines to your requirements.txt
 streamlit
 # For AI Models
 torch
@@ -8,3 +9,6 @@ accelerate
 TTS
 # For Video Editing
 moviepy
+# For LLM
+einops
+tiktoken
