@@ -1,14 +1,12 @@
-# Add these lines to your requirements.txt
 streamlit
-# For AI Models
 torch
 transformers
 diffusers
 accelerate
-# For TTS
 TTS
-# For Video Editing
 moviepy
-# For LLM
 einops
 tiktoken
+pillow
+imageio
+imageio-ffmpeg
