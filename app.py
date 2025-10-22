@@ -1,79 +1,61 @@
-import streamlit as st
+# app.py
 import os
-import time
-from pipeline.main_pipeline import run_ad_verse_pipeline
+import streamlit as st
 
-# --- Page Configuration ---
-st.set_page_config(
-    page_title="Ad-Verse AI",
-    page_icon="🎬",
-    layout="wide"
-)
+# Try to import real pipeline first
+try:
+    from pipeline.main_pipeline import run_pipeline as real_pipeline
+except Exception:
+    real_pipeline = None
 
-st.title("🎬 Ad-Verse: The AI Commercial Director")
-st.markdown("Turn a single prompt into a fully-produced 30-second video ad. This app is a **blueprint**; it runs a *mock* pipeline. See `README.md` to implement the real AI models.")
+# Always import mock fallback
+from pipeline.inference import generate_mock_ad
 
-# --- Sidebar for Inputs ---
-with st.sidebar:
-    st.header("1. Describe Your Product")
-    product_prompt = st.text_area(
-        "What are you advertising?",
-        "A cozy coffee shop called 'The Daily Grind', located in a quiet neighborhood.",
-        height=100
-    )
 
-    st.header("2. Choose a Vibe")
-    ad_vibe = st.selectbox(
-        "What's the mood?",
-        ("Cozy & Relaxing", "Energetic & Exciting", "Modern & Sleek", "Funny & Quirky")
-    )
-    
-    st.header("3. Select a Voice")
-    ad_voice = st.selectbox(
-        "Choose a voice style:",
-        ("Warm Male", "Professional Female", "Friendly Male", "Calm Female")
-    )
+st.set_page_config(page_title="Ad-Verse — AI Commercial Director", layout="centered")
 
-    st.divider()
-    generate_button = st.button("✨ Generate My Ad!", type="primary", use_container_width=True)
+st.title("🎬 Ad-Verse — The AI Commercial Director")
+st.caption("Transform a single line prompt into a 30-second video ad. (Currently running mock mode)")
 
-# --- Main Content Area for Output ---
-output_container = st.container()
-output_container.header("Your Generated Ad")
-video_placeholder = output_container.empty()
-video_placeholder.info("Your ad will appear here once generated.")
+# Sidebar controls
+st.sidebar.header("🧠 Generation Settings")
+prompt = st.sidebar.text_area("Ad Prompt", value="A small cafe introducing artisan coffee with cozy vibes.")
+style = st.sidebar.selectbox("Style", ["Minimal", "Cinematic", "Playful", "Corporate"])
+voice = st.sidebar.selectbox("Voice", ["Neutral", "Energetic", "Calm"])
+resolution = st.sidebar.selectbox("Resolution", ["640x360", "1280x720"], index=1)
+fps = st.sidebar.slider("FPS", 12, 30, 24)
+seed = st.sidebar.number_input("Random Seed", value=42, step=1)
 
-# This callback function lets us update the Streamlit UI from the pipeline
-def streamlit_callback(message):
-    st.toast(message)
-    print(message) # Also print to console
+os.makedirs("outputs", exist_ok=True)
 
-if generate_button:
-    if not product_prompt:
-        st.error("Please describe your product first!")
+st.markdown("### 🪄 Your Prompt")
+st.write(f"_{prompt or '— Enter something cool above —'}_")
+
+if st.button("🎥 Generate 30-second Ad"):
+    if not prompt.strip():
+        st.error("Please enter a prompt.")
     else:
-        full_prompt = f"{product_prompt}. Vibe: {ad_vibe}. Voice: {ad_voice}."
-        
-        # This is where we call the master pipeline
-        try:
-            with st.spinner("The AI agents are at work..."):
-                final_ad_path = run_ad_verse_pipeline(full_prompt, streamlit_callback)
-            
-            if final_ad_path and os.path.exists(final_ad_path):
-                st.success("🎉 Your ad is ready!")
-                video_placeholder.video(final_ad_path)
-                
-                with open(final_ad_path, "rb") as file:
-                    st.download_button(
-                        label="Download Ad (.mp4)",
-                        data=file,
-                        file_name="my_adverse_ad.mp4",
-                        mime="video/mp4",
-                        use_container_width=True
-                    )
-            else:
-                st.error("The ad generation failed. See console for mock data. (This is expected in the blueprint).")
+        with st.spinner("🎬 Running pipeline... please wait..."):
+            try:
+                if real_pipeline:
+                    out_path = real_pipeline(prompt=prompt, out_dir="outputs")
+                else:
+                    out_path = generate_mock_ad(prompt, "outputs", style, voice, resolution, fps, seed)
+            except Exception as e:
+                st.warning(f"⚠️ Real pipeline failed, using mock. ({e})")
+                out_path = generate_mock_ad(prompt, "outputs", style, voice, resolution, fps, seed)
 
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-            st.error("This is expected in the blueprint. Implement the AI models in the `/pipeline/` files to fix.")
+        st.success("✅ Ad Generated Successfully!")
+        st.video(out_path)
+        with open(out_path, "rb") as f:
+            st.download_button("⬇️ Download Video", f, file_name=os.path.basename(out_path), mime="video/mp4")
+
+st.markdown("---")
+st.subheader("📂 Recent Outputs")
+videos = sorted([f for f in os.listdir("outputs") if f.endswith(".mp4")], reverse=True)
+if videos:
+    for f in videos[:5]:
+        st.write(f"**{f}**")
+        st.video(os.path.join("outputs", f))
+else:
+    st.info("No generated ads yet.")
