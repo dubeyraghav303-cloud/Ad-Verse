@@ -1,0 +1,8 @@
+streamlit
+google-generativeai
+elevenlabs
+python-dotenv
+moviepy
+imageio-ffmpeg
+pillow
+requests
